@@ -1,13 +1,11 @@
 r"""
-Generate k_component comparison and sigma_ablation_qr_inset plots.
+Generate k component comparison and baseline model plots.
 
 This script loads pre-cached model predictions and generates CRPS/R² plots:
     1. K-component sweep: hetero (K=1), mdn2 (K=2), mdn3 (K=3), mdn4 (K=4), mdn5 (K=5)
     2. Sigma ablation with quantile regression (QR) inset: mdn2, mixshared, quantile
 
-Plots use the same metrics and closed-form CRPS calculation as the original baseline_comparison.py
-
-Configuration (modify if needed):
+Configuration:
     TRAIN_CSV: Path to training data file
     CACHE_DIR: Directory containing cached baseline model predictions (*.npz files)
     FIGURES_DIR: Output directory for PNG and SVG plots
