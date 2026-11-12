@@ -1,34 +1,19 @@
 r"""
-Generate k_component and sigma_ablation plots from baseline comparison models.
+Generate k_component comparison and sigma_ablation_qr_inset plots.
 
-This script loads pre-cached model predictions and generates CRPS/R² plots
-comparing different numbers of mixture components (K=1..5) and different sigma
-learning strategies (learned sigma(x), constant sigma, shared sigma, etc.).
+This script loads pre-cached model predictions and generates CRPS/R² plots:
+    1. K-component sweep: hetero (K=1), mdn2 (K=2), mdn3 (K=3), mdn4 (K=4), mdn5 (K=5)
+    2. Sigma ablation with quantile regression (QR) inset: mdn2, mixshared, quantile
 
-The script automatically discovers cached model predictions in CACHE_DIR and 
-generates publication-ready plots with error bands showing standard deviation 
-across 5 independent training runs.
-
-Plots generated:
-    - K-component sweep: hetero (K=1), mdn2 (K=2), mdn3 (K=3), mdn4 (K=4), mdn5 (K=5)
-    - Sigma ablation: mdn2 (learned sigma), const (constant sigma), 
-                      mixshared (shared constant sigma), mixconst (per-component constant sigma)
-    - Both CRPS and R² metrics
-    - Both main plots and inset plots (zoomed to 100-500 samples)
-    - Separate plots for SET, RESET, and pooled (SET_and_RESET)
+Plots use the same metrics and closed-form CRPS calculation as the original baseline_comparison.py
 
 Configuration (modify if needed):
     TRAIN_CSV: Path to training data file
-    MDN_PREDICTIONS_DIR: Directory containing pre-trained MDN predictions (not used in this script)
     CACHE_DIR: Directory containing cached baseline model predictions (*.npz files)
     FIGURES_DIR: Output directory for PNG and SVG plots
 
 Usage:
     python baseline_comparison_cleaned.py
-    
-Requirements:
-    - Cached model predictions in CACHE_DIR for all models and training set sizes
-    - Test data in TRAIN_CSV (rows 600+ used for evaluation)
 """
 
 import os
@@ -37,6 +22,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+from scipy.special import ndtr
 
 # =========================
 # Configuration
@@ -49,19 +35,18 @@ FIGURES_DIR = 'figures/Baseline_comparison'
 
 # Models for component and sigma ablation studies
 MODELS_K_SWEEP = ('hetero', 'mdn2', 'mdn3', 'mdn4', 'mdn5')  # K = 1..5
-MODELS_SIGMA_ABLATION = ('mdn2', 'const', 'mixshared', 'mixconst')
+MODELS_QR_COMPARISON = ('mdn2', 'mixshared', 'quantile')  # For qr_inset plots
 
 # Model labels for plots
 K_LABELS = {'hetero': 'K=1', 'mdn2': 'K=2', 'mdn3': 'K=3', 'mdn4': 'K=4', 'mdn5': 'K=5'}
-SIGMA_LABELS = {
+QR_LABELS = {
     'mdn2': 'MDN, 2 Gaussians, $\\sigma(x)$',
-    'const': '1 Gaussian, const. $\\sigma$',
     'mixshared': '2 Gaussians, shared const. $\\sigma$',
-    'mixconst': '2 Gaussians, const. $\\sigma$ per component',
+    'quantile': 'Quantile regression NN',
 }
 MODEL_COLORS = {
     'hetero': '#1f77b4', 'mdn2': '#d62728', 'mdn3': '#ff7f0e', 'mdn4': '#9467bd', 'mdn5': '#8c564b',
-    'const': '#7f7f7f', 'mixshared': '#e377c2', 'mixconst': '#bcbd22'
+    'quantile': '#2ca02c', 'mixshared': '#e377c2'
 }
 
 STATES = ('set', 'reset')
@@ -110,31 +95,33 @@ def cache_path(kind, n):
     return os.path.join(CACHE_DIR, f'{kind}_n{n}.npz')
 
 
-
-
 # =========================
 # Metrics Computation
 # =========================
 def crps_mixture(y, pi, mu, sigma):
     """
-    CRPS for Gaussian mixture distribution.
+    Closed-form CRPS of Gaussian mixtures (matches original baseline_comparison.py).
     
     Args:
         y: (N,) observed values
-        pi: (R, N, K) mixture weights
-        mu: (R, N, K) means
-        sigma: (R, N, K) standard deviations
+        pi: (R, N, C) mixture weights
+        mu: (R, N, C) means
+        sigma: (R, N, C) standard deviations
     Returns:
         (R, N) CRPS values for each run and sample
     """
-    sigma = np.maximum(sigma, 1e-12)
-    # Component-wise CRPS
-    z = (y[None, :, None] - mu) / sigma
-    crps_k = sigma * (z * (2 * norm.cdf(z) - 1) + 2 * norm.pdf(z) - 1 / np.sqrt(np.pi))
-    # Mixture CRPS (Equation 7 of Nowotarski & Rasp 2016)
-    return (pi * crps_k).sum(-1) - 0.5 * (pi[:, :, None, :] * pi[:, :, :, None] *
-                                          np.sqrt((mu[:, :, None, :] - mu[:, :, :, None])**2 +
-                                                  (sigma[:, :, None, :] + sigma[:, :, :, None])**2)).sum((-1, -2))
+    sigma = np.maximum(sigma, 1e-6)
+    yy = y[None, :, None]
+    z = (yy - mu) / sigma
+    # First term: expectation of absolute difference
+    first = (pi * (2 * sigma * norm.pdf(z) + (yy - mu) * (2 * ndtr(z) - 1))).sum(-1)
+    # Second term: variance-like term from pairwise distances
+    d = mu[..., :, None] - mu[..., None, :]
+    s = np.sqrt(sigma[..., :, None] ** 2 + sigma[..., None, :] ** 2)
+    zz = d / s
+    abs_diff = 2 * s * norm.pdf(zz) + d * (2 * ndtr(zz) - 1)
+    second = 0.5 * (pi[..., :, None] * pi[..., None, :] * abs_diff).sum((-1, -2))
+    return first - second
 
 
 def crps_quantiles(y, q):
@@ -270,52 +257,49 @@ def plot_crps_vs_n(summary, tag, models, output_dir, suffix='', labels=None, met
 # Main
 # =========================
 def main():
-    """Generate k_component and sigma_ablation plots."""
+    """Generate k_component comparison and sigma_ablation_qr_inset plots."""
     # Discover available training set sizes from cached files
     n_values = set()
     for fn in os.listdir(CACHE_DIR):
         m = re.search(r'_n(\d+)\.npz$', fn)
         if m:
             n_values.add(int(m.group(1)))
-    # Also check for MDN predictions
-    for fn in os.listdir(MDN_PREDICTIONS_DIR):
-        m = re.search(r'_n(\d+)_', fn)
-        if m:
-            n_values.add(int(m.group(1)))
     n_values = sorted(n_values)
     print(f"Found {len(n_values)} training set sizes: {n_values}")
     
-    # Compute summary statistics
-    models = list(MODELS_K_SWEEP) + list(MODELS_SIGMA_ABLATION)
-    summary = summarize(n_values, models)
+    # Compute summary statistics for all required models
+    all_models = list(MODELS_K_SWEEP) + list(MODELS_QR_COMPARISON)
+    summary = summarize(n_values, all_models)
     
-    # Generate k_component plots (CRPS)
+    # === Generate k_component plots (CRPS and R²) ===
     for tag in ('SET', 'RESET', 'SET_and_RESET'):
+        # CRPS main plots
         plot_crps_vs_n(summary, tag, MODELS_K_SWEEP, FIGURES_DIR, suffix='_k_components', 
                       labels=K_LABELS, metric='crps')
+        # CRPS inset plots
         plot_crps_vs_n(summary, tag, MODELS_K_SWEEP, FIGURES_DIR, suffix='_k_components_inset',
                       labels=K_LABELS, metric='crps', inset_range=(100, 500))
-    
-    # Generate k_component plots (R²)
-    for tag in ('SET', 'RESET', 'SET_and_RESET'):
+        # R² inset plots
         plot_crps_vs_n(summary, tag, MODELS_K_SWEEP, FIGURES_DIR, suffix='_k_components_inset',
                       labels=K_LABELS, metric='r2', inset_range=(100, 500), 
                       inset_rect=(0.5, 0.08, 0.42, 0.42))
     
-    # Generate sigma_ablation plots (CRPS)
+    # === Generate sigma_ablation_qr_inset plots (CRPS and R²) ===
     for tag in ('SET', 'RESET', 'SET_and_RESET'):
-        plot_crps_vs_n(summary, tag, MODELS_SIGMA_ABLATION, FIGURES_DIR, suffix='_sigma_ablation',
-                      labels=SIGMA_LABELS, metric='crps', legend_below=True)
-        plot_crps_vs_n(summary, tag, MODELS_SIGMA_ABLATION, FIGURES_DIR, suffix='_sigma_ablation_inset',
-                      labels=SIGMA_LABELS, metric='crps', legend_below=True, inset_range=(100, 500))
-    
-    # Generate sigma_ablation plots (R²)
-    for tag in ('SET', 'RESET', 'SET_and_RESET'):
-        plot_crps_vs_n(summary, tag, MODELS_SIGMA_ABLATION, FIGURES_DIR, suffix='_sigma_ablation_inset',
-                      labels=SIGMA_LABELS, metric='r2', legend_below=True, inset_range=(100, 500),
+        # CRPS qr_inset (MDN2, mixshared, quantile)
+        plot_crps_vs_n(summary, tag, MODELS_QR_COMPARISON, FIGURES_DIR,
+                      suffix='_sigma_ablation_qr_inset', labels=QR_LABELS,
+                      legend_below=True, inset_range=(100, 500))
+        # R² qr_inset (MDN2, mixshared, quantile)
+        plot_crps_vs_n(summary, tag, MODELS_QR_COMPARISON, FIGURES_DIR,
+                      suffix='_sigma_ablation_qr_inset', labels=QR_LABELS, metric='r2',
+                      legend_below=True, inset_range=(100, 500),
                       inset_rect=(0.5, 0.08, 0.42, 0.42))
     
     print("\n[OK] All plots generated successfully!")
+    print("\nGenerated plots:")
+    print("  - K-component comparison: crps_vs_n_*_k_components*.png/svg")
+    print("  - Sigma ablation with QR: crps_vs_n_*_sigma_ablation_qr_inset.png/svg")
 
 
 if __name__ == '__main__':
