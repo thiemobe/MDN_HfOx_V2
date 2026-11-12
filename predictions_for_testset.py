@@ -6,21 +6,15 @@ statistics) from all shuffle-trained models for a given training sample size,
 evaluated against a CSV test set.
 
 Usage:
-    python predictions_for_testset.py --model-type shuffled --n-samples 50
+    python predictions_for_testset.py --n-samples 50
 
-Usage for iterating over all model folders in a directory:
-    python predictions_for_testset.py --models-root "C:\Users\tbe\preparing-MDN_HfOx\models\d2d" --n-samples 125 --all-datasets
-
-Usage for one example:
-    python predictions_for_testset.py --models-root "C:\Users\tbe\preparing-MDN_HfOx\models\removed_outliers_1000_500" --n-samples 500 --all-datasets --single-example
-
-or pick just one folder:
-    python predictions_for_testset.py --models-root "C:\Users\tbe\preparing-MDN_HfOx\models\d2d" --n-samples 125 --dataset "train_samples_dev_1_46_600_samples_low_ratio_cleaned"
+Usage with custom CSV test file:
+    python predictions_for_testset.py --n-samples 125 --csv-file "data/sweep_10_cycles.csv"
 
 Run for all sample sizes (PowerShell):
     $sample_sizes = @(8, 12, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 316, 400, 500)
     foreach ($n in $sample_sizes) {
-        python predictions_for_testset.py --model-type shuffled --n-samples $n
+        python predictions_for_testset.py --n-samples $n
     }
 
 By default, output is split into separate _set and _reset CSV files. Pass
@@ -40,7 +34,7 @@ from scipy.stats import norm
 from MDN import MDN
 from MDN_predict import predict_distribution
  
-DEFAULT_CSV_FILE = 'data/test_samples_removed_outliers.csv'
+DEFAULT_CSV_FILE = 'data/test_samples.csv'
 DEFAULT_MODELS_BASE_DIR = 'models'
 N_SHUFFLE_RUNS = 1
 N_COMPONENTS_DEFAULT = 2
@@ -722,7 +716,7 @@ def main():
         "--dataset",
         type=str,
         default=None,
-        help="Optional dataset folder under --models-root, e.g. train_samples_dev_1_46_600_samples_low_ratio_cleaned"
+        help="Optional dataset folder under --models-root (for backward compatibility)"
     )
     parser.add_argument(
         "--all-datasets",

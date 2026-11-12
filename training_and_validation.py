@@ -18,7 +18,7 @@ from sklearn.preprocessing import StandardScaler
 # Usage for iterating over all CSV files in a directory:
 #python training_and_validation.py --all-data-files --data-dir "C:\Users\tbe\preparing-MDN_HfOx\data\removed_outliers_1000" --output-dir "models/removed_outliers_1000" --n-samples 500 --n-runs 5
 
-DATA_FILE = 'data/train_samples_dev_1_46_600_samples_low_ratio_cleaned.csv'
+DATA_FILE = 'data/train_val_samples.csv'
 DEFAULT_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'removed_outliers')
 N_SAMPLES = 125                # training samples per model
 N_RUNS = 1                      # number of models trained with different shuffles

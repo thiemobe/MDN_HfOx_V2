@@ -16,7 +16,7 @@ python figures/1f_conductance_distibution.py --compare-train-csvs "data/d2d_orig
 # =========================
 filenames = ['train_samples_dev_32_22_1000_samples_high_ratio.csv', 'train_samples_dev_28_15_1000_samples_high_ratio.csv']
 DEFAULT_TRAIN_DIR = 'data/d2d_original_data_1000'
-DEFAULT_TEST_CSV = 'data/test_samples_removed_outliers.csv'
+DEFAULT_TEST_CSV = 'data/test_samples.csv'
 DEFAULT_OUTPUT_DIR = 'figures/Conductance_distribution'
 DEFAULT_BINS = 50
 TRAIN_ONLY_XMAX = 150
