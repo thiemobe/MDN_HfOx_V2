@@ -23,11 +23,11 @@ from scipy.stats import norm
 # =========================
 # Configuration
 # =========================
-VALIDATION_CSV = 'results/validation_examples_model_run5_500samples_with_outliers.csv'
+VALIDATION_CSV = 'results/validation_examples_new_split_model_run5_500samples.csv'
 GT_CSV = 'data/sweep_10_cycles.csv'
 
-VALIDATION_OUTPUT_DIR = 'figures/3d_and_observation_vs_prediction_with_outliers'
-VALIDATION_INDIVIDUAL_OUTPUT_DIR = 'figures/3d_and_observation_vs_prediction_with_outliers'
+VALIDATION_OUTPUT_DIR = 'figures/3d_and_observation_vs_prediction_new_split'
+VALIDATION_INDIVIDUAL_OUTPUT_DIR = 'figures/3d_and_observation_vs_prediction_new_split'
 
 Y_MIN, Y_MAX, N_POINTS = -25.0, 150.0, 400
 

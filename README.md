@@ -1,6 +1,12 @@
-This repository (version 2) contains the relevant data, scripts, and figures for the APL Machine Learning publication "Mixture density networks as a probabilistic surrogate for cycle-to-cycle variability in filamentary HfOx-memristive devices".
+This repository contains the relevant data, scripts, and figures for the APL Machine Learning publication "Mixture density networks as a probabilistic surrogate for cycle-to-cycle variability in filamentary HfOx-memristive devices".
 
 **Note**: This is the revised publication version using the raw dataset without outlier removal.
+
+### Key Modifications in V2:
+- Removed all outlier-based analysis and models
+- Regenerated seed_variation plots (upper subplot only, coefficient of variation removed)
+- Updated all figure generation scripts to use the new split structure
+- Included all necessary visualization scripts from the preparation pipeline
 
 ## Main Scripts
 
@@ -23,7 +29,8 @@ This repository (version 2) contains the relevant data, scripts, and figures for
   - `1f_conductance_distibution.py` – Conductance distribution plots
   - `3d_plot_and_indiv_predictions.py` – 3D visualization and individual sample predictions (view1 only)
   - `crps_and_r2_plot.py` – CRPS and R² performance plots
-  - `visualize_predictions_new_split.py` – Prediction visualization
+  - `visualize_predictions.py` – Seed variation analysis and model comparison visualization
+  - `visualize_predictions_new_split.py` – Prediction visualization for individual examples
   - **CRPS_and_R2/** – Main publication CRPS and R² plots
   - **3d_and_observation_vs_prediction_new_split/** – 3D plots and observation vs prediction comparisons
   - **Individual_samples_new_split/** – Individual sample prediction examples
@@ -35,7 +42,7 @@ This repository (version 2) contains the relevant data, scripts, and figures for
     - **Figure_1_K_components_comparison/** – Comparison of MDN k-components variations
     - **Figure_2_Sigma_ablation_comparison/** – Comparison of sigma (uncertainty) ablation studies
     - **Figure_3_Device_45_40_analysis/** – Analysis of alternative device 45_40
-    - **Figure_4_Seed_variation/** – Seed variation analysis across random initializations
+    - **Figure_4_Seed_variation/** – Seed variation analysis across random initializations (no coefficient of variation)
 
 - **models/** – Trained MDN models and associated scalers
   - `n8/` through `n500/` – Models trained with different sample sizes (8 to 500 samples)
