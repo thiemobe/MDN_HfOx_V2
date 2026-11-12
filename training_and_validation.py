@@ -15,8 +15,13 @@ from MDN_loss import mdn_loss
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import StandardScaler
 
-# Usage for iterating over all CSV files in a directory:
-#python training_and_validation.py --all-data-files --data-dir "C:\Users\tbe\preparing-MDN_HfOx\data\removed_outliers_1000" --output-dir "models/removed_outliers_1000" --n-samples 500 --n-runs 5
+# Usage examples:
+# python training_and_validation.py --n-samples 50 --n-runs 1
+# python training_and_validation.py --n-samples 500 --n-runs 5
+# 
+# Batch training for multiple sample sizes (PowerShell):
+# $sample_sizes = @(8, 12, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 316, 400, 500)
+# foreach ($n in $sample_sizes) { python training_and_validation.py --n-samples $n }
 
 DATA_FILE = 'data/train_val_samples.csv'
 DEFAULT_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'removed_outliers')
@@ -229,9 +234,9 @@ def build_data(csv_file=DATA_FILE,
     state_str = df.iloc[:, 0].astype(str).str.strip().str.lower()
     state_bin = np.where(state_str == 'set', 1.0, 0.0)
 
-    G_col9 = pd.to_numeric(df.iloc[:, 10], errors='coerce').to_numpy(dtype=float) * 1e6
+    G_col9 = pd.to_numeric(df.iloc[:, 9], errors='coerce').to_numpy(dtype=float) * 1e6
     V_col4 = pd.to_numeric(df.iloc[:, 3], errors='coerce').to_numpy(dtype=float)
-    conductance_after = pd.to_numeric(df.iloc[:, [14, 19, 24, 29, 34, 39, 44, 49, 54, 59]].mean(axis=1), errors='coerce').to_numpy(dtype=float) * 1e6
+    conductance_after = pd.to_numeric(df.iloc[:, [11, 14, 17]].mean(axis=1), errors='coerce').to_numpy(dtype=float) * 1e6
 
     X = np.column_stack([state_bin, G_col9, V_col4]).astype(float)
     y = conductance_after.astype(float)

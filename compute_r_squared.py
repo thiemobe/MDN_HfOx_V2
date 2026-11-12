@@ -26,7 +26,7 @@ import pandas as pd
 # =========================
 # Configuration
 # =========================
-DEFAULT_DATA_DIR = 'predictions/final_predictions_shuffled_model_seperate_states_with_outliers'
+DEFAULT_DATA_DIR = 'predictions'
 CSV_OUTPUT_FILENAME = 'results/R2/r_squared_summary_all_models_with_outliers.csv'
 JSON_OUTPUT_FILENAME = 'results/R2/r_squared_summary_all_models_with_outliers.json'
 N_COMPONENTS_PER_MEMBER = 2

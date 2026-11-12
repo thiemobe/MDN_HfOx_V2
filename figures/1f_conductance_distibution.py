@@ -8,14 +8,16 @@ import pandas as pd
 from matplotlib.ticker import MaxNLocator
 
 """
-Compare two distributions in one plot
+To show the distribution of Fig. 1f, just run the script.
+
+To compare two distributions in one plot:
 python figures/1f_conductance_distibution.py --compare-train-csvs "data/d2d_original_data_1000/train_samples_dev_45_40_1000_samples_low_ratio.csv" "data/original_data.csv"
 """
 # =========================
 # Configuration
 # =========================
-filenames = ['train_samples_dev_32_22_1000_samples_high_ratio.csv', 'train_samples_dev_28_15_1000_samples_high_ratio.csv']
-DEFAULT_TRAIN_DIR = 'data/d2d_original_data_1000'
+filenames = ['original_data.csv']
+DEFAULT_TRAIN_DIR = 'data'
 DEFAULT_TEST_CSV = 'data/test_samples.csv'
 DEFAULT_OUTPUT_DIR = 'figures/Conductance_distribution'
 DEFAULT_BINS = 50
@@ -40,10 +42,11 @@ def load_train_validation_conductance_before(csv_path):
     """Load G_before (conductance-before) values from the training/validation CSV in uS (column 9)."""
     df = pd.read_csv(csv_path, encoding='utf-8-sig')
 
-    conductance_before = pd.to_numeric(
-        df['G_before'],
-        errors='coerce'
-    ).to_numpy(dtype=float) * 1e6
+    # Try column name first, fall back to column index 9
+    if 'G_before' in df.columns:
+        conductance_before = pd.to_numeric(df['G_before'], errors='coerce').to_numpy(dtype=float) * 1e6
+    else:
+        conductance_before = pd.to_numeric(df.iloc[:, 9], errors='coerce').to_numpy(dtype=float) * 1e6
 
     valid = np.isfinite(conductance_before) & (conductance_before > 0)
     return conductance_before[valid]

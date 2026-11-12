@@ -23,6 +23,8 @@ This repository contains the relevant data, scripts, and figures for the APL Mac
   - `IV_0641.txt` – I-V characteristic measurements
   - `sweep_10_cycles.csv` – Cycle-by-cycle conductance data for detailed analysis
   - `original_data.csv` – Complete raw dataset used for training
+  - `train_val_samples.csv` - Training and Validation data split from original_data.csv
+  - `test_samples.csv` - Test data split from original_data.csv
 
 - **figures/** – Scripts and outputs for figure generation
   - `1b_and_c_IV.py` – I-V characteristic plots
